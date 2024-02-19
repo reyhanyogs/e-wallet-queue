@@ -4,7 +4,9 @@ import (
 	"log"
 
 	"github.com/hibiken/asynq"
+	"github.com/reyhanyogs/e-wallet-queue/internal/component"
 	"github.com/reyhanyogs/e-wallet-queue/internal/config"
+	"github.com/reyhanyogs/e-wallet-queue/internal/repository"
 	"github.com/reyhanyogs/e-wallet-queue/internal/service"
 )
 
@@ -16,8 +18,14 @@ func main() {
 		Password: config.Redis.Pass,
 	}
 
+	dbConnection := component.GetDatabaseConn(config)
+
+	accountRepository := repository.NewAccount(dbConnection)
+	userRepository := repository.NewUser(dbConnection)
+	transactionRepository := repository.NewTransaction(dbConnection)
+
 	emailService := service.NewEmail(config)
-	accountService := service.NewAccount(config)
+	accountService := service.NewAccount(config, accountRepository, transactionRepository, userRepository, emailService)
 
 	worker := asynq.NewServer(redisConnection, asynq.Config{
 		Concurrency: 4,

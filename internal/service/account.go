@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/hibiken/asynq"
@@ -10,18 +11,63 @@ import (
 )
 
 type accountService struct {
-	config *config.Config
+	config                *config.Config
+	accountRepository     domain.AccountRepository
+	transactionRepository domain.TransactionRepository
+	userRepository        domain.UserRepository
+	emailService          domain.EmailService
 }
 
-func NewAccount(config *config.Config) domain.AccountService {
+func NewAccount(
+	config *config.Config,
+	accountRepository domain.AccountRepository,
+	transactionRepository domain.TransactionRepository,
+	userRepository domain.UserRepository,
+	emailService domain.EmailService,
+) domain.AccountService {
 	return &accountService{
-		config: config,
+		config:                config,
+		accountRepository:     accountRepository,
+		transactionRepository: transactionRepository,
+		userRepository:        userRepository,
+		emailService:          emailService,
 	}
 }
 
 func (s *accountService) GenerateMutation() (string, func(ctx context.Context, task *asynq.Task) error) {
 	return "generate:mutation", func(ctx context.Context, task *asynq.Task) error {
-		log.Println("generate mutation execute")
+		account_ids, err := s.accountRepository.GetAllAccountId(ctx)
+		if err != nil {
+			log.Fatalf("GenerationMutation: %s", err.Error())
+			return err
+		}
+
+		for _, id := range account_ids {
+			earning, err := s.transactionRepository.GetWeeklyEarning(ctx, id)
+			if err != nil {
+				log.Fatalf("GetWeeklyEarning: ID = %d: err = %s", id, err.Error())
+				return err
+			}
+			spends, err := s.transactionRepository.GetWeeklySpending(ctx, id)
+			if err != nil {
+				log.Fatalf("GetWeeklySpending: ID = %d: err = %s", id, err.Error())
+				return err
+			}
+
+			email, err := s.userRepository.FindEmailByID(ctx, id)
+			if err != nil {
+				log.Fatalf("FindEmailByID: ID = %d: err = %s", id, err.Error())
+				return err
+			}
+
+			body := fmt.Sprintf("Here's your weekly earning & spending\nEarning: %f\nSpending: %f", earning, spends)
+			err = s.emailService.Send(email, "[E-wallet] Weekly Earning & Spending", body)
+			if err != nil {
+				log.Fatalf("GenerationMutation: ID = %d: err = %s", id, err.Error())
+				return err
+			}
+		}
+
 		return nil
 	}
 }

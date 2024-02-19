@@ -1,9 +1,10 @@
 package config
 
 type Config struct {
-	Server Server
-	Mail   Email
-	Redis  Redis
+	Server   Server
+	Database Database
+	Mail     Email
+	Redis    Redis
 }
 
 type Redis struct {
@@ -14,6 +15,14 @@ type Redis struct {
 type Server struct {
 	Host string
 	Port string
+}
+
+type Database struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
 }
 
 type Email struct {
