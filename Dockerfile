@@ -7,6 +7,12 @@ FROM alpine:3.19
 WORKDIR /app
 COPY --from=builder /app/main .
 COPY queue.env .
+COPY start.sh .
+COPY wait-for .
+RUN chmod a+x start.sh
+RUN chmod a+x wait-for
+RUN mkdir logs
 
 EXPOSE 8081
 CMD ["/app/main"]
+ENTRYPOINT ["/app/start.sh"]
