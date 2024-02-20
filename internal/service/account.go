@@ -38,32 +38,33 @@ func (s *accountService) GenerateMutation() (string, func(ctx context.Context, t
 	return "generate:mutation", func(ctx context.Context, task *asynq.Task) error {
 		account_ids, err := s.accountRepository.GetAllAccountId(ctx)
 		if err != nil {
-			component.Log.Fatalf("GenerateMutation(GetAllAccountId): err = %s", err.Error())
+			component.Log.Errorf("GenerateMutation(GetAllAccountId): err = %s", err.Error())
 			return err
 		}
 
 		for _, id := range account_ids {
+			component.Log.Infof("GenerateMutation is running: ID = %d", id)
 			earning, err := s.transactionRepository.GetWeeklyEarning(ctx, id)
 			if err != nil {
-				component.Log.Fatalf("GenerateMutation(GetWeeklyEarning): ID = %d: err = %s", id, err.Error())
+				component.Log.Errorf("GenerateMutation(GetWeeklyEarning): ID = %d: err = %s", id, err.Error())
 				return err
 			}
 			spends, err := s.transactionRepository.GetWeeklySpending(ctx, id)
 			if err != nil {
-				component.Log.Fatalf("GenerateMutation(GetWeeklySpending): ID = %d: err = %s", id, err.Error())
+				component.Log.Errorf("GenerateMutation(GetWeeklySpending): ID = %d: err = %s", id, err.Error())
 				return err
 			}
 
 			email, err := s.userRepository.FindEmailByID(ctx, id)
 			if err != nil {
-				component.Log.Fatalf("GenerateMutation(FindEmailByID): ID = %d: err = %s", id, err.Error())
+				component.Log.Errorf("GenerateMutation(FindEmailByID): ID = %d: err = %s", id, err.Error())
 				return err
 			}
 
 			body := fmt.Sprintf("Here's your weekly earning & spending\nEarning: %f\nSpending: %f", earning, spends)
 			err = s.emailService.Send(email, "[E-wallet] Weekly Earning & Spending", body)
 			if err != nil {
-				component.Log.Fatalf("GenerateMutation(Send): ID = %d: err = %s", id, err.Error())
+				component.Log.Errorf("GenerateMutation(Send): ID = %d: err = %s", id, err.Error())
 				return err
 			}
 		}

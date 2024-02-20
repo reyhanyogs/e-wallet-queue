@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
 	"net/mail"
 	"net/smtp"
@@ -106,7 +105,7 @@ func (s *emailService) SendEmailQueue() (string, func(ctx context.Context, task 
 		var data dto.EmailSendReq
 		_ = json.Unmarshal(task.Payload(), &data)
 
-		log.Printf("Execute send email: %s", data.To)
+		component.Log.Infof("SendEmailQueue(Send): To = %s", data.To)
 		return s.Send(data.To, data.Subject, data.Body)
 	}
 }
