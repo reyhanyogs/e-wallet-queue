@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/hibiken/asynq"
 	"github.com/reyhanyogs/e-wallet-queue/internal/component"
 	"github.com/reyhanyogs/e-wallet-queue/internal/config"
@@ -34,7 +32,8 @@ func main() {
 	mux.HandleFunc(emailService.SendEmailQueue())
 	mux.HandleFunc(accountService.GenerateMutation())
 
+	component.Log.Info("Starting Queue Worker")
 	if err := worker.Run(mux); err != nil {
-		log.Fatal(err)
+		component.Log.Fatalf("Main(Run): err = %s", err.Error())
 	}
 }

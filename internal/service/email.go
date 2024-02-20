@@ -13,6 +13,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/reyhanyogs/e-wallet-queue/domain"
 	"github.com/reyhanyogs/e-wallet-queue/dto"
+	"github.com/reyhanyogs/e-wallet-queue/internal/component"
 	"github.com/reyhanyogs/e-wallet-queue/internal/config"
 )
 
@@ -57,36 +58,43 @@ func (s *emailService) Send(to string, subject string, body string) error {
 
 	conn, err := tls.Dial("tcp", servername, tlsConfig)
 	if err != nil {
+		component.Log.Errorf("Send(Dial): err = %s", err.Error())
 		return err
 	}
 
 	c, err := smtp.NewClient(conn, host)
 	if err != nil {
+		component.Log.Errorf("Send(NewClient): err = %s", err.Error())
 		return err
 	}
 
 	// Auth
 	if err = c.Auth(auth); err != nil {
+		component.Log.Errorf("Send(Auth): err = %s", err.Error())
 		return err
 	}
 
 	// From & To
 	if err = c.Mail(from.Address); err != nil {
+		component.Log.Errorf("Send(Mail): err = %s", err.Error())
 		return err
 	}
 
 	if err = c.Rcpt(toMail.Address); err != nil {
+		component.Log.Errorf("Send(Rcpt): err = %s", err.Error())
 		return err
 	}
 
 	// Data
 	w, err := c.Data()
 	if err != nil {
+		component.Log.Errorf("Send(Data): err = %s", err.Error())
 		return err
 	}
 
 	_, err = w.Write([]byte(message))
 	if err != nil {
+		component.Log.Errorf("Send(Write): err = %s", err.Error())
 		return err
 	}
 
